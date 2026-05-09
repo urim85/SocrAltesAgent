@@ -13,15 +13,15 @@ from .agent.state import DEFAULT_STATE
 app = FastAPI(title="SocrAItes API")
 
 # Mount static files
-static_path = os.path.join(os.path.dirname(__file__), "static")
-if not os.path.exists(static_path):
-    os.makedirs(static_path)
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+if not os.path.exists(frontend_path):
+    os.makedirs(frontend_path)
 
-app.mount("/static", StaticFiles(directory=static_path), name="static")
+app.mount("/frontend", StaticFiles(directory=frontend_path), name="frontend")
 
 @app.get("/")
 async def read_index():
-    return FileResponse(os.path.join(static_path, "index.html"))
+    return FileResponse(os.path.join(frontend_path, "index.html"))
 
 # Enable CORS for frontend development
 app.add_middleware(
@@ -73,6 +73,14 @@ async def chat(request: ChatRequest):
             plan=result.get("plan")
         )
     except Exception as e:
+        # For UI testing purposes, return a mock message instead of 500
+        error_msg = str(e)
+        if "API key" in error_msg or "not found" in error_msg:
+            return ChatResponse(
+                answer="현재 API 키가 설정되지 않았습니다. `.env` 파일에 `OPENAI_API_KEY`를 입력해주세요. (UI 테스트용 모드)",
+                session_id=request.session_id or str(uuid.uuid4()),
+                retrieved_docs=[]
+            )
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")

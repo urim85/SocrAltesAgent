@@ -9,8 +9,10 @@ ENV/
 
 # Project specific
 chroma_db/
+test_chroma/
 *.db
 .env
+data/pdfs/
 
 # OS
 .DS_Store

@@ -46,15 +46,33 @@ def get_collection(name: str = "socratic_docs"):
         return client.create_collection(name=name, embedding_function=embeddings)
 
 
-def add_documents(docs: List[str], metadatas: List[dict] | None = None) -> None:
+def add_documents(docs: List[str], metadatas: List[dict] | None = None, ids: List[str] | None = None) -> None:
     """Add a list of document *chunks* to the vector store.
 
     Each chunk becomes a separate record. ``metadatas`` can contain source
     information like ``{"source": "Week5.pdf", "page": 12}``.
+    ``ids`` can be provided explicitly to avoid duplicates; if omitted,
+    auto-generated IDs are used.
     """
     collection = get_collection()
-    ids = [f"doc_{i}" for i in range(len(docs))]
-    collection.add(ids=ids, documents=docs, metadatas=metadatas or [{}] * len(docs))
+    existing_ids = set(collection.get()["ids"])
+    
+    if ids is None:
+        import uuid
+        ids = [str(uuid.uuid4()) for _ in docs]
+    
+    # Filter out already-existing IDs to prevent duplicate insertion
+    new_docs, new_metas, new_ids = [], [], []
+    for doc, meta, id_ in zip(docs, metadatas or [{}] * len(docs), ids):
+        if id_ not in existing_ids:
+            new_docs.append(doc)
+            new_metas.append(meta)
+            new_ids.append(id_)
+    
+    if new_docs:
+        collection.add(ids=new_ids, documents=new_docs, metadatas=new_metas)
+    
+    return len(new_docs)
 
 
 def query(query_text: str, k: int = 5) -> List[Tuple[str, float]]:
