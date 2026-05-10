@@ -17,3 +17,4 @@ data/pdfs/
 # OS
 .DS_Store
 Thumbs.db
+temp_uploads/

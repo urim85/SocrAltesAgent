@@ -38,12 +38,10 @@ def get_collection(name: str = "socratic_docs"):
     """Retrieve (or create) a collection for storing document chunks.
 
     The collection uses the ``embeddings`` function defined above.
+    Uses get_or_create_collection for compatibility with ChromaDB v0.5+.
     """
     client = get_client()
-    if name in client.list_collections():
-        return client.get_collection(name)
-    else:
-        return client.create_collection(name=name, embedding_function=embeddings)
+    return client.get_or_create_collection(name=name, embedding_function=embeddings)
 
 
 def add_documents(docs: List[str], metadatas: List[dict] | None = None, ids: List[str] | None = None) -> None:

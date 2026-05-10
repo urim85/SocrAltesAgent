@@ -2,11 +2,25 @@ import os
 from datetime import datetime
 from typing import List, Dict, Any, Literal
 
+from dotenv import load_dotenv
+load_dotenv()  # Ensure .env is loaded even when graph.py is imported directly
+
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langgraph.graph import StateGraph, END
 
 from .state import AgentState, DEFAULT_STATE
+
+
+def _get_content(response) -> str:
+    """Safely extract text content from LLM response.
+
+    ChatOpenAI returns an AIMessage (has .content).
+    FakeListLLM returns a plain str.
+    """
+    if hasattr(response, "content"):
+        return response.content
+    return str(response)
 
 # ---------------------------------------------------------------------------
 # LLM Configuration
@@ -39,7 +53,7 @@ Decide if this is:
 Respond with ONLY one word: 'PLAN' for category 1, or 'DIRECT' for category 2."""
     
     response = llm.invoke([HumanMessage(content=prompt)])
-    decision = response.content.strip().upper()
+    decision = _get_content(response).strip().upper()
     
     if "PLAN" in decision:
         state["next_step"] = "planner"
@@ -69,7 +83,7 @@ Task: Create a concise execution plan.
 Respond with a brief plan description."""
     
     response = llm.invoke([HumanMessage(content=prompt)])
-    state["plan"] = response.content
+    state["plan"] = _get_content(response)
     state["next_step"] = "subagents"
     return state
 
@@ -114,7 +128,7 @@ Rules:
             messages.append(AIMessage(content=m["content"]))
             
     response = llm.invoke(messages)
-    state["draft_answer"] = response.content
+    state["draft_answer"] = _get_content(response)
     return state
 
 
@@ -151,7 +165,7 @@ def direct_response(state: AgentState) -> AgentState:
     """Node for non-study queries."""
     last_msg = state["messages"][-1]["content"]
     response = llm.invoke([SystemMessage(content="You are a friendly academic assistant. Respond to the user's greeting or casual talk briefly in Korean."), HumanMessage(content=last_msg)])
-    state["draft_answer"] = response.content
+    state["draft_answer"] = _get_content(response)
     return state
 
 from src.rag import vectorstore

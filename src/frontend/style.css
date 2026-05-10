@@ -181,6 +181,47 @@ textarea {
 .send-btn svg { width: 12px !important; height: 12px !important; }
 .send-btn:hover:not(:disabled) { transform: scale(1.1); }
 
+/* System Messages */
+.message.system {
+    align-self: center;
+    max-width: 100%;
+    margin: 0.5rem 0;
+}
+.message.system .msg-avatar { display: none; }
+.message.system .message-content {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 0;
+    text-align: center;
+}
+.system-text strong { color: var(--primary); }
+
+/* Attachment Button */
+.attach-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: var(--transition);
+}
+.attach-btn:hover {
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+.attach-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+}
+
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }

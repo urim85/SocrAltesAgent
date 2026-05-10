@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const statDocs = document.getElementById('stat-docs');
     const docsList = document.getElementById('docs-list');
     const quickChips = document.querySelectorAll('.chip');
+    const attachBtn = document.getElementById('attach-btn');
+    const pdfUpload = document.getElementById('pdf-upload');
 
     // State
     let messages = [];
@@ -150,11 +152,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const avatarDiv = document.createElement('div');
         avatarDiv.className = 'msg-avatar';
-        avatarDiv.innerText = role === 'ai' ? 'S' : 'U';
+        avatarDiv.innerText = role === 'ai' ? 'S' : (role === 'system' ? '⚙️' : 'U');
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        contentDiv.innerHTML = role === 'ai' ? marked.parse(text) : text.replace(/\n/g, '<br>');
+        
+        if (role === 'system') {
+            contentDiv.innerHTML = `<span class="system-text">${marked.parse(text)}</span>`;
+        } else {
+            contentDiv.innerHTML = role === 'ai' ? marked.parse(text) : text.replace(/\n/g, '<br>');
+        }
         
         msgDiv.appendChild(avatarDiv);
         msgDiv.appendChild(contentDiv);
@@ -199,6 +206,46 @@ document.addEventListener('DOMContentLoaded', () => {
             sendMessage();
         }
     });
+    
+    // PDF Upload Handling
+    if (attachBtn && pdfUpload) {
+        attachBtn.addEventListener('click', () => pdfUpload.click());
+        
+        pdfUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Show system message for upload starting
+            addMessage(`📄 **${file.filename || file.name}** 파일을 업로드 중입니다...`, 'system');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Upload failed');
+                }
+                
+                const data = await response.json();
+                addMessage(`✅ **${data.filename}** 등록 완료! (${data.chunks_added}개의 지식 조각 추출)`, 'system');
+                
+                // Update doc count (dummy update since we don't know total docs in store)
+                // In a real app, you might fetch the current count or list
+            } catch (error) {
+                console.error(error);
+                addMessage(`❌ 업로드 실패: ${error.message}`, 'system');
+            } finally {
+                // Clear input so same file can be uploaded again if needed
+                pdfUpload.value = '';
+            }
+        });
+    }
 
     newChatBtn.addEventListener('click', () => {
         if (confirm('대화 내용을 초기화하고 새로 시작하시겠습니까?')) {
